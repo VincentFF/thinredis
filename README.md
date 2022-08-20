@@ -1,1 +1,1 @@
-# goredis
+# simpleredis
