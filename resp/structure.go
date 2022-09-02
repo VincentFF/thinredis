@@ -9,7 +9,8 @@ var (
 )
 
 type RedisData interface {
-    ToBytes() []byte
+    ToBytes() []byte  // return resp transfer format data
+    ByteData() []byte // return byte data
 }
 
 type StringData struct {
@@ -28,6 +29,7 @@ type ErrorData struct {
     data string
 }
 
+// ArrayData not implement ByteData()
 type ArrayData struct {
     data []RedisData
 }
@@ -59,6 +61,10 @@ func (r *BulkData) Data() []byte {
     return r.data
 }
 
+func (r *BulkData) ByteData() []byte {
+    return r.data
+}
+
 func MakeStringData(data string) *StringData {
     return &StringData{
         data: data,
@@ -71,6 +77,9 @@ func (r *StringData) ToBytes() []byte {
 
 func (r *StringData) Data() string {
     return r.data
+}
+func (r *StringData) ByteData() []byte {
+    return []byte(r.data)
 }
 
 func MakeIntData(data int64) *IntData {
@@ -87,6 +96,10 @@ func (r *IntData) Data() int64 {
     return r.data
 }
 
+func (r *IntData) ByteData() []byte {
+    return []byte(strconv.FormatInt(r.data, 10))
+}
+
 func MakeErrorData(data string) *ErrorData {
     return &ErrorData{
         data: data,
@@ -101,23 +114,15 @@ func (r *ErrorData) Error() string {
     return r.data
 }
 
+func (r *ErrorData) ByteData() []byte {
+    return []byte(r.data)
+}
+
 func MakeArrayData(data []RedisData) *ArrayData {
     return &ArrayData{
         data: data,
     }
 }
-
-//func MakeNullArrayData() *ArrayData {
-//	return &ArrayData{
-//		data: nil,
-//	}
-//}
-//
-//func MakeEmptyArrayData() *ArrayData {
-//	return &ArrayData{
-//		data: make([]RedisData, 0),
-//	}
-//}
 
 func (r *ArrayData) ToBytes() []byte {
     if r.data == nil {
@@ -134,6 +139,23 @@ func (r *ArrayData) Data() []RedisData {
     return r.data
 }
 
+func (r *ArrayData) TOCommand() [][]byte {
+    res := make([][]byte, 0)
+    for _, v := range r.data {
+        res = append(res, v.ByteData())
+    }
+    return res
+}
+
+// ByteData is discarded. Use ToCommand() instead.
+func (r *ArrayData) ByteData() []byte {
+    res := make([]byte, 0)
+    for _, v := range r.data {
+        res = append(res, v.ByteData()...)
+    }
+    return res
+}
+
 func MakePlainData(data string) *PlainData {
     return &PlainData{
         data: data,
@@ -144,4 +166,8 @@ func (r *PlainData) ToBytes() []byte {
 }
 func (r *PlainData) Data() string {
     return r.data
+}
+
+func (r *PlainData) ByteData() []byte {
+    return []byte(r.data)
 }

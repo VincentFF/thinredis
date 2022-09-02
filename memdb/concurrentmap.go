@@ -1,10 +1,9 @@
 package memdb
 
 import (
-    "hash/fnv"
     "sync"
 
-    "github.com/VincentFF/simpleredis/logger"
+    "github.com/VincentFF/simpleredis/util"
 )
 
 const MaxConSize = int(1<<31 - 1)
@@ -20,7 +19,7 @@ type ConcurrentMap struct {
 
 type shard struct {
     mp   map[string]any
-    rwMu sync.RWMutex
+    rwMu *sync.RWMutex
 }
 
 // NewConcurrentMap create a new ConcurrentMap with given size. If size <=0, it will be set to MaxConSize.
@@ -34,23 +33,23 @@ func NewConcurrentMap(size int) *ConcurrentMap {
         count: 0,
     }
     for i := 0; i < size; i++ {
-        m.table[i] = &shard{mp: make(map[string]any)}
+        m.table[i] = &shard{mp: make(map[string]any), rwMu: &sync.RWMutex{}}
     }
     return m
 }
 
-func HashKey(key string) (int, error) {
-    fnv32 := fnv.New32()
-    _, err := fnv32.Write([]byte(key))
-    if err != nil {
-        logger.Error("hashKey error: %v", err)
-        return -1, err
-    }
-    return int(fnv32.Sum32()), nil
-}
+//func hashKey(key string) (int, error) {
+//    fnv32 := fnv.New32()
+//    _, err := fnv32.Write([]byte(key))
+//    if err != nil {
+//        logger.Error("hashKey error: %v", err)
+//        return -1, err
+//    }
+//    return int(fnv32.Sum32()), nil
+//}
 
 func (m *ConcurrentMap) getKeyPos(key string) int {
-    hash, err := HashKey(key)
+    hash, err := util.HashKey(key)
     if err != nil {
         return -1
     }
@@ -70,6 +69,33 @@ func (m *ConcurrentMap) Set(key string, value any) int {
     }
     shard.mp[key] = value
     return added
+}
+
+func (m *ConcurrentMap) SetIfExist(key string, value any) int {
+    pos := m.getKeyPos(key)
+    shard := m.table[pos]
+    shard.rwMu.Lock()
+    defer shard.rwMu.Unlock()
+
+    if _, ok := shard.mp[key]; ok {
+        shard.mp[key] = value
+        return 1
+    }
+    return 0
+}
+
+func (m *ConcurrentMap) SetIfNotExist(key string, value any) int {
+    pos := m.getKeyPos(key)
+    shard := m.table[pos]
+    shard.rwMu.Lock()
+    defer shard.rwMu.Unlock()
+
+    if _, ok := shard.mp[key]; !ok {
+        m.count++
+        shard.mp[key] = value
+        return 1
+    }
+    return 0
 }
 
 func (m *ConcurrentMap) Get(key string) (any, bool) {
@@ -96,7 +122,7 @@ func (m *ConcurrentMap) Delete(key string) int {
     return 0
 }
 
-func (m *ConcurrentMap) Length() int {
+func (m *ConcurrentMap) Len() int {
     return m.count
 }
 

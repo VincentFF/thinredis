@@ -6,7 +6,8 @@ import (
     "log"
     "os"
     "path"
-    "strings"
+    "path/filepath"
+    "runtime"
     "sync"
 
     "github.com/VincentFF/simpleredis/config"
@@ -28,11 +29,13 @@ const (
 )
 
 var (
-    logFile     *os.File
-    logger      *log.Logger
-    logMu       sync.Mutex
-    levelLabels = []string{"debug", "info", "warning", "error", "panic"}
-    logcfg      *LogConfig
+    logFile            *os.File
+    logger             *log.Logger
+    logMu              sync.Mutex
+    levelLabels        = []string{"debug", "info", "warning", "error", "panic"}
+    logcfg             *LogConfig
+    defaultCallerDepth = 2
+    logPrefix          = ""
 )
 
 func SetUp(cfg *config.Config) error {
@@ -62,12 +65,22 @@ func SetUp(cfg *config.Config) error {
         return err
     }
     writer := io.MultiWriter(os.Stdout, logFile)
-    logger = log.New(writer, "", log.Ldate|log.Ltime|log.Lshortfile)
+    logger = log.New(writer, "", log.LstdFlags)
     return nil
 }
 
 func Disable() {
     logger.SetOutput(io.Discard)
+}
+
+func setPrefix(level LogLevel) {
+    _, file, line, ok := runtime.Caller(defaultCallerDepth)
+    if ok {
+        logPrefix = fmt.Sprintf("[%s][%s:%d] ", levelLabels[level], filepath.Base(file), line)
+    } else {
+        logPrefix = fmt.Sprintf("[%s] ", levelLabels[level])
+    }
+    logger.SetPrefix(logPrefix)
 }
 
 func Debug(v ...any) {
@@ -76,7 +89,7 @@ func Debug(v ...any) {
     }
     logMu.Lock()
     defer logMu.Unlock()
-    logger.SetPrefix(fmt.Sprintf("%-10s", strings.ToUpper(levelLabels[DEBUG])))
+    setPrefix(DEBUG)
     logger.Println(v)
 }
 
@@ -86,8 +99,7 @@ func Info(v ...any) {
     }
     logMu.Lock()
     defer logMu.Unlock()
-    logger.SetPrefix(fmt.Sprintf("%-10s", strings.ToUpper(levelLabels[INFO])))
-
+    setPrefix(INFO)
     logger.Println(v)
 }
 
@@ -97,7 +109,7 @@ func Warning(v ...any) {
     }
     logMu.Lock()
     defer logMu.Unlock()
-    logger.SetPrefix(fmt.Sprintf("%-10s", strings.ToUpper(levelLabels[WARNING])))
+    setPrefix(WARNING)
     logger.Println(v)
 }
 
@@ -107,7 +119,7 @@ func Error(v ...any) {
     }
     logMu.Lock()
     defer logMu.Unlock()
-    logger.SetPrefix(fmt.Sprintf("%-10s", strings.ToUpper(levelLabels[ERROR])))
+    setPrefix(ERROR)
     logger.Println(v)
 }
 
@@ -117,6 +129,6 @@ func Panic(v ...any) {
     }
     logMu.Lock()
     defer logMu.Unlock()
-    logger.SetPrefix(fmt.Sprintf("%-10s", strings.ToUpper(levelLabels[PANIC])))
+    setPrefix(PANIC)
     logger.Println(v)
 }

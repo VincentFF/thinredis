@@ -11,12 +11,23 @@ import (
 	"strings"
 )
 
+var Configures *Config
+
+var (
+	defaultHost     = "127.0.0.1"
+	defaultPort     = 6379
+	defaultLogDir   = "./"
+	defaultLogLevel = "info"
+	defaultShardNum = 1024
+)
+
 type Config struct {
 	ConfFile string
 	Host     string
 	Port     int
 	LogDir   string
 	LogLevel string
+	ShardNum int
 }
 
 type CfgError struct {
@@ -29,16 +40,24 @@ func (cErr *CfgError) Error() string {
 
 func flagInit(cfg *Config) {
 	flag.StringVar(&(cfg.ConfFile), "config", "", "Appoint a config file: such as /etc/redis.conf")
-	flag.StringVar(&(cfg.Host), "host", "127.0.0.1", "Bind host ip: default is 127.0.0.1")
-	flag.IntVar(&(cfg.Port), "port", 6379, "Bind a listening port: default is 6399")
-	flag.StringVar(&(cfg.LogDir), "logdir", "", "Set log directory: default is /tmp")
-	flag.StringVar(&(cfg.LogLevel), "loglevel", "info", "Set log level: default is info")
+	flag.StringVar(&(cfg.Host), "host", defaultHost, "Bind host ip: default is 127.0.0.1")
+	flag.IntVar(&(cfg.Port), "port", defaultPort, "Bind a listening port: default is 6399")
+	flag.StringVar(&(cfg.LogDir), "logdir", defaultLogDir, "Set log directory: default is /tmp")
+	flag.StringVar(&(cfg.LogLevel), "loglevel", defaultLogLevel, "Set log level: default is info")
 }
 
 // Setup initialize configs and do some validation checking.
 // Return configured Config pointer and error.
 func Setup() (*Config, error) {
-	cfg := new(Config)
+
+	cfg := &Config{
+		Host:     defaultHost,
+		Port:     defaultPort,
+		LogDir:   defaultLogDir,
+		LogLevel: defaultLogLevel,
+		ShardNum: defaultShardNum,
+	}
+
 	flagInit(cfg)
 	flag.Parse()
 	if cfg.ConfFile != "" {
@@ -60,6 +79,7 @@ func Setup() (*Config, error) {
 			return nil, portErr
 		}
 	}
+	Configures = cfg
 	return cfg, nil
 }
 
@@ -69,7 +89,13 @@ func (cfg *Config) Parse(cfgFile string) error {
 	if err != nil {
 		return err
 	}
-	defer fl.Close()
+
+	defer func() {
+		err := fl.Close()
+		if err != nil {
+			fmt.Printf("Close config file error: %s \n", err.Error())
+		}
+	}()
 
 	reader := bufio.NewReader(fl)
 	for {
@@ -109,6 +135,12 @@ func (cfg *Config) Parse(cfgFile string) error {
 			cfg.LogDir = strings.ToLower(fields[1])
 		} else if cfgName == "loglevel" {
 			cfg.LogLevel = strings.ToLower(fields[1])
+		} else if cfgName == "shardnum" {
+			cfg.ShardNum, err = strconv.Atoi(fields[1])
+			if err != nil {
+				fmt.Println("ShardNum should be a number. Get: ", fields[1])
+				panic(err)
+			}
 		}
 		if ioErr == io.EOF {
 			break
