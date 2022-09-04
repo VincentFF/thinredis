@@ -9,6 +9,8 @@ import (
     "github.com/VincentFF/simpleredis/resp"
 )
 
+// Handler handles all client requests to the server
+// It holds a MemDb instance to exchange data with clients
 type Handler struct {
     memDb *memdb.MemDb
 }

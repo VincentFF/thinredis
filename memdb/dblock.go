@@ -65,15 +65,20 @@ func (l *Locks) RUnlock(key string) {
 }
 
 func (l *Locks) sortedLockPoses(keys []string) []int {
-    poses := make([]int, len(keys))
-    for i, key := range keys {
+    set := make(map[int]struct{})
+    for _, key := range keys {
         pos := l.GetKeyPos(key)
         if pos == -1 {
             logger.Error("Locks Lock key %s error: pos == -1", key)
             return nil
-        } else {
-            poses[i] = pos
         }
+        set[pos] = struct{}{}
+    }
+    poses := make([]int, len(set))
+    i := 0
+    for pos, _ := range set {
+        poses[i] = pos
+        i++
     }
     sort.Ints(poses)
     return poses

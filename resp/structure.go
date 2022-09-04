@@ -4,6 +4,8 @@ import (
     "strconv"
 )
 
+// this file implements data structure for resp
+
 var (
     CRLF = "\r\n"
 )

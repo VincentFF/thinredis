@@ -10,7 +10,7 @@ import (
     "github.com/VincentFF/simpleredis/logger"
 )
 
-// decode package for decoding redis serialization protocol.
+// resp package for parsing redis serialization protocol.
 // Check https://redis.io/docs/reference/protocol-spec/ for the protocol details.
 
 type ParsedRes struct {

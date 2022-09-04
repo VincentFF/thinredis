@@ -9,10 +9,14 @@ import (
     "github.com/VincentFF/simpleredis/resp"
 )
 
+// MemDb is the memory cache database
+// All key:value pairs are stored in db
+// All ttl keys are stored in ttlKeys
+// locks is used to lock a key for db to ensure some atomic operations
 type MemDb struct {
     db      *ConcurrentMap
     ttlKeys *ConcurrentMap
-    locks   *Locks // locks lock a key for db to ensure some atomic operations
+    locks   *Locks
 }
 
 func NewMemDb() *MemDb {

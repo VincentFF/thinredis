@@ -9,6 +9,7 @@ import (
     "github.com/VincentFF/simpleredis/logger"
 )
 
+// Start starts a simple redis server
 func Start(cfg *config.Config) error {
     listener, err := net.Listen("tcp", cfg.Host+":"+strconv.Itoa(cfg.Port))
     if err != nil {

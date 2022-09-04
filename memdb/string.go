@@ -10,6 +10,8 @@ import (
     "github.com/VincentFF/simpleredis/resp"
 )
 
+// string.go file implements the string commands of redis
+
 func setString(m *MemDb, cmd [][]byte) resp.RedisData {
     cmdName := strings.ToLower(string(cmd[0]))
     if cmdName != "set" {
