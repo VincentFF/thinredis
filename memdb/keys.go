@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/VincentFF/simpleredis/logger"
-	"github.com/VincentFF/simpleredis/resp"
-	"github.com/VincentFF/simpleredis/util"
+	"github.com/VincentFF/thinredis/logger"
+	"github.com/VincentFF/thinredis/resp"
+	"github.com/VincentFF/thinredis/util"
 )
 
 // keys.go file implements the keys commands of redis
