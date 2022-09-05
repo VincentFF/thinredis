@@ -190,7 +190,7 @@ func typeKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	switch v.(type) {
 	case []byte:
 		return resp.MakeStringData("string")
-	case List:
+	case *List:
 		return resp.MakeStringData("list")
 	case map[string]any:
 		return resp.MakeStringData("hash")
