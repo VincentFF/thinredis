@@ -40,7 +40,7 @@ func (l *Locks) Lock(key string) {
 	l.locks[pos].Lock()
 }
 
-func (l *Locks) Unlock(key string) {
+func (l *Locks) UnLock(key string) {
 	pos := l.GetKeyPos(key)
 	if pos == -1 {
 		logger.Error("Locks UnLock key %s error: pos == -1", key)
@@ -56,7 +56,7 @@ func (l *Locks) RLock(key string) {
 	l.locks[pos].RLock()
 }
 
-func (l *Locks) RUnlock(key string) {
+func (l *Locks) RUnLock(key string) {
 	pos := l.GetKeyPos(key)
 	if pos == -1 {
 		logger.Error("Locks RUnLock key %s error: pos == -1", key)
@@ -76,7 +76,7 @@ func (l *Locks) sortedLockPoses(keys []string) []int {
 	}
 	poses := make([]int, len(set))
 	i := 0
-	for pos, _ := range set {
+	for pos := range set {
 		poses[i] = pos
 		i++
 	}
@@ -115,7 +115,7 @@ func (l *Locks) RLockMulti(keys []string) {
 	}
 }
 
-func (l *Locks) RUnlockMulti(keys []string) {
+func (l *Locks) RUnLockMulti(keys []string) {
 	poses := l.sortedLockPoses(keys)
 	if poses == nil {
 		return

@@ -59,7 +59,7 @@ func setString(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	// set key based on options
 	m.locks.Lock(string(cmd[1]))
-	defer m.locks.Unlock(string(cmd[1]))
+	defer m.locks.UnLock(string(cmd[1]))
 
 	var res resp.RedisData
 	oldVal, oldOk := m.db.Get(string(cmd[1]))
@@ -132,7 +132,7 @@ func getString(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	val, ok := m.db.Get(key)
 	if !ok {
@@ -160,7 +160,7 @@ func getRangeString(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	val, ok := m.db.Get(key)
 	if !ok {
@@ -219,7 +219,7 @@ func setRangeString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key) // check ttl first. if a key is expired, the key will be deleted.
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	val, ok := m.db.Get(key)
 	if !ok {
@@ -261,7 +261,7 @@ func mGetString(m *MemDb, cmd [][]byte) resp.RedisData {
 		}
 		m.locks.RLock(key)
 		val, ok := m.db.Get(key)
-		m.locks.RUnlock(key)
+		m.locks.RUnLock(key)
 		if !ok {
 			res = append(res, resp.MakeBulkData(nil))
 		} else {
@@ -320,7 +320,7 @@ func setExString(m *MemDb, cmd [][]byte) resp.RedisData {
 	val := cmd[3]
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	m.db.Set(key, val)
 	m.SetTTL(key, ttl)
 
@@ -341,7 +341,7 @@ func setNxString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	res := m.db.SetIfNotExist(key, val)
 
 	return resp.MakeIntData(int64(res))
@@ -359,7 +359,7 @@ func strLenString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	val, ok := m.db.Get(key)
 	if !ok {
@@ -384,7 +384,7 @@ func incrString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	val, ok := m.db.Get(key)
 	if !ok {
 		m.db.Set(key, []byte("1"))
@@ -419,7 +419,7 @@ func incrByString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	val, ok := m.db.Get(key)
 	if !ok {
 		m.db.Set(key, []byte(strconv.FormatInt(inc, 10)))
@@ -430,6 +430,9 @@ func incrByString(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
 	intVal, err := strconv.ParseInt(string(typeVal), 10, 64)
+	if err != nil {
+		return resp.MakeErrorData("value is not an integer")
+	}
 	intVal += inc
 	m.db.Set(key, []byte(strconv.FormatInt(intVal, 10)))
 	return resp.MakeIntData(intVal)
@@ -447,7 +450,7 @@ func decrString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	val, ok := m.db.Get(key)
 	if !ok {
 		m.db.Set(key, []byte("-1"))
@@ -482,7 +485,7 @@ func decrByString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	val, ok := m.db.Get(key)
 	if !ok {
 		m.db.Set(key, []byte(strconv.FormatInt(-dec, 10)))
@@ -493,6 +496,9 @@ func decrByString(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
 	intVal, err := strconv.ParseInt(string(typeVal), 10, 64)
+	if err != nil {
+		return resp.MakeErrorData("value is not an integer")
+	}
 	intVal -= dec
 	m.db.Set(key, []byte(strconv.FormatInt(intVal, 10)))
 	return resp.MakeIntData(intVal)
@@ -516,7 +522,7 @@ func incrByFloatString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	val, ok := m.db.Get(key)
 	if !ok {
@@ -549,7 +555,7 @@ func appendString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	oldVal, ok := m.db.Get(key)
 	if !ok {
 		m.db.Set(key, val)

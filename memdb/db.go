@@ -59,7 +59,7 @@ func (m *MemDb) CheckTTL(key string) bool {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	m.db.Delete(key)
 	m.ttlKeys.Delete(key)
 	return false

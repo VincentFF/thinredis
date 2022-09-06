@@ -29,7 +29,7 @@ func lLenList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	v, ok := m.db.Get(key)
 	if !ok {
@@ -65,7 +65,7 @@ func lIndexList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	v, ok := m.db.Get(key)
 	if !ok {
@@ -135,7 +135,7 @@ func lPosList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	tem, ok := m.db.Get(key)
 	if !ok {
@@ -298,7 +298,7 @@ func lPopList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	tem, ok := m.db.Get(key)
 	if !ok {
 		return resp.MakeBulkData(nil)
@@ -307,6 +307,14 @@ func lPopList(m *MemDb, cmd [][]byte) resp.RedisData {
 	if !ok {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
+
+	// remove the key when list is empty
+	defer func() {
+		if list.Len == 0 {
+			m.db.Delete(key)
+			m.DelTTL(key)
+		}
+	}()
 
 	// if cnt is not set, return first element
 	if cnt == 0 {
@@ -353,7 +361,7 @@ func rPopList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	tem, ok := m.db.Get(key)
 	if !ok {
 		return resp.MakeBulkData(nil)
@@ -362,6 +370,13 @@ func rPopList(m *MemDb, cmd [][]byte) resp.RedisData {
 	if !ok {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
+
+	defer func() {
+		if list.Len == 0 {
+			m.db.Delete(key)
+			m.DelTTL(key)
+		}
+	}()
 
 	// if cnt is not set, return last element
 	if cnt == 0 {
@@ -397,7 +412,7 @@ func lPushList(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	var list *List
 	tem, ok := m.db.Get(key)
@@ -429,7 +444,7 @@ func lPushXList(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	var list *List
 	tem, ok := m.db.Get(key)
@@ -460,7 +475,7 @@ func rPushList(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	var list *List
 	tem, ok := m.db.Get(key)
@@ -492,7 +507,7 @@ func rPushXList(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.CheckTTL(key)
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	var list *List
 	tem, ok := m.db.Get(key)
@@ -531,7 +546,7 @@ func lSetList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	tem, ok := m.db.Get(key)
 	if !ok {
@@ -571,7 +586,7 @@ func lRemList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	tem, ok := m.db.Get(key)
 	if !ok {
@@ -582,6 +597,13 @@ func lRemList(m *MemDb, cmd [][]byte) resp.RedisData {
 	if !ok {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
+
+	defer func() {
+		if list.Len == 0 {
+			m.db.Delete(key)
+			m.DelTTL(key)
+		}
+	}()
 
 	res := list.RemoveElement(cmd[3], count)
 
@@ -608,7 +630,7 @@ func lTrimList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 
 	tem, ok := m.db.Get(key)
 	if !ok {
@@ -618,6 +640,14 @@ func lTrimList(m *MemDb, cmd [][]byte) resp.RedisData {
 	if !ok {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
+
+	defer func() {
+		if list.Len == 0 {
+			m.db.Delete(key)
+			m.DelTTL(key)
+		}
+	}()
+
 	list.Trim(start, end)
 	return resp.MakeStringData("OK")
 }
@@ -644,7 +674,7 @@ func lRangeList(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 
 	tem, ok := m.db.Get(key)
 	if !ok {
@@ -659,7 +689,7 @@ func lRangeList(m *MemDb, cmd [][]byte) resp.RedisData {
 	if temRes == nil {
 		return resp.MakeArrayData(nil)
 	}
-	res := make([]resp.RedisData, len(temRes), len(temRes))
+	res := make([]resp.RedisData, len(temRes))
 	for i := 0; i < len(temRes); i++ {
 		res[i] = resp.MakeBulkData(temRes[i])
 	}
@@ -706,6 +736,13 @@ func lMoveList(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 	}
 
+	defer func() {
+		if srcList.Len == 0 {
+			m.db.Delete(src)
+			m.DelTTL(src)
+		}
+	}()
+
 	if srcList.Len == 0 {
 		return resp.MakeBulkData(nil)
 	}
@@ -740,7 +777,7 @@ func lMoveList(m *MemDb, cmd [][]byte) resp.RedisData {
 
 // TODO: blpop from list
 //func blPopList(m *MemDb, cmd [][]byte) resp.RedisData {
-//    return nil
+//	return nil
 //}
 
 // TODO: brpop from list

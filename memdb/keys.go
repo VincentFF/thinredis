@@ -27,7 +27,7 @@ func delKey(m *MemDb, cmd [][]byte) resp.RedisData {
 		m.locks.Lock(string(key))
 		dKey += m.db.Delete(string(key))
 		m.ttlKeys.Delete(string(key))
-		m.locks.Unlock(string(key))
+		m.locks.UnLock(string(key))
 	}
 	return resp.MakeIntData(int64(dKey))
 }
@@ -47,7 +47,7 @@ func existsKey(m *MemDb, cmd [][]byte) resp.RedisData {
 			if _, ok := m.db.Get(key); ok {
 				eKey++
 			}
-			m.locks.RUnlock(key)
+			m.locks.RUnLock(key)
 		}
 	}
 	return resp.MakeIntData(int64(eKey))
@@ -98,7 +98,7 @@ func expireKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	var res int
 	switch opt {
 	case "nx":
@@ -139,7 +139,7 @@ func persistKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.Lock(key)
-	defer m.locks.Unlock(key)
+	defer m.locks.UnLock(key)
 	res := m.DelTTL(key)
 	return resp.MakeIntData(int64(res))
 }
@@ -157,7 +157,7 @@ func ttlKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 	if _, ok := m.db.Get(key); !ok {
 		return resp.MakeIntData(int64(-2))
 	}
@@ -182,7 +182,7 @@ func typeKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	m.locks.RLock(key)
-	defer m.locks.RUnlock(key)
+	defer m.locks.RUnLock(key)
 	v, ok := m.db.Get(key)
 	if !ok {
 		return resp.MakeStringData("none")
@@ -192,12 +192,14 @@ func typeKey(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeStringData("string")
 	case *List:
 		return resp.MakeStringData("list")
-	case map[string]any:
+	case *Set:
+		return resp.MakeStringData("set")
+	case *Hash:
 		return resp.MakeStringData("hash")
 	default:
-		logger.Error("typeKey Function: type func error, not in string|list|hash")
+		logger.Error("typeKey Function: type func error, not in string|list|set|hash")
 	}
-	return resp.MakeErrorData("error: type func error, not in string|list|hash")
+	return resp.MakeErrorData("unknown error: server error")
 }
 
 func renameKey(m *MemDb, cmd [][]byte) resp.RedisData {
