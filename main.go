@@ -16,6 +16,7 @@ func init() {
 	memdb.RegisterStringCommands()
 	memdb.RegisterListCommands()
 	memdb.RegisterSetCommands()
+	memdb.RegisterHashCommands()
 }
 
 func main() {

@@ -229,7 +229,25 @@ func renameKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	return resp.MakeStringData("OK")
 }
 
+func pingKeys(m *MemDb, cmd [][]byte) resp.RedisData {
+	cmdName := string(cmd[0])
+	if strings.ToLower(cmdName) != "ping" {
+		logger.Error("pingKeys Function: cmdName is not ping")
+		return resp.MakeErrorData("server error")
+	}
+
+	if len(cmd) > 2 {
+		return resp.MakeErrorData("error: command args number is invalid")
+	}
+
+	if len(cmd) == 1 {
+		return resp.MakeStringData("PONG")
+	}
+	return resp.MakeBulkData(cmd[1])
+}
+
 func RegisterKeyCommands() {
+	RegisterCommand("ping", pingKeys)
 	RegisterCommand("del", delKey)
 	RegisterCommand("exists", existsKey)
 	RegisterCommand("keys", keysKey)
