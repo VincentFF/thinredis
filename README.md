@@ -1,7 +1,7 @@
 # thinRedis
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/VincentFF/thinredis)](https://goreportcard.com/report/github.com/VincentFF/thinredis)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/VincentFF/thinredis/blob/main/LICENSE)  
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/VincentFF/thinredis/blob/main/LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/VincentFF/thinredis)](https://goreportcard.com/report/github.com/VincentFF/thinredis)  
 **thinRedis** is a high performance standalone cache server written by GO.  
 It implemented full [RESP](https://redis.io/docs/reference/protocol-spec/)(Redis Serialization Protocol), so it supports
 all Redis clients.
