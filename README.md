@@ -39,7 +39,7 @@ Usage of ./thinredis:
   -port int
         Bind a listening port: default is 6399 (default 6379)
 ```
-## Communicate with thinRedis server
+## Communication with thinRedis server
 Any redis client can communicate with thinRedis server.  
 For example, use redis-cli to communicate with thinRedis server:
 
