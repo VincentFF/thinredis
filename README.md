@@ -11,7 +11,7 @@ all Redis clients.
 * Support all Clients based on RESP protocol
 * Support String, List, Set, Hash data types
 * Support TTL(Key-Value pair will be deleted after TTL)
-* Full memory storage
+* Full in-memory storage
 * Support atomic operation for some needed commands(like INCR, DECR, INCRBY, MSET, SMOVE, etc.)
 
 ## Usage
