@@ -126,6 +126,12 @@ func MakeArrayData(data []RedisData) *ArrayData {
 	}
 }
 
+func MakeEmptyArrayData() *ArrayData {
+	return &ArrayData{
+		data: []RedisData{},
+	}
+}
+
 func (r *ArrayData) ToBytes() []byte {
 	if r.data == nil {
 		return []byte("*-1\r\n")

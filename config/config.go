@@ -41,7 +41,7 @@ func (cErr *CfgError) Error() string {
 func flagInit(cfg *Config) {
 	flag.StringVar(&(cfg.ConfFile), "config", "", "Appoint a config file: such as /etc/redis.conf")
 	flag.StringVar(&(cfg.Host), "host", defaultHost, "Bind host ip: default is 127.0.0.1")
-	flag.IntVar(&(cfg.Port), "port", defaultPort, "Bind a listening port: default is 6399")
+	flag.IntVar(&(cfg.Port), "port", defaultPort, "Bind a listening port: default is 6379")
 	flag.StringVar(&(cfg.LogDir), "logdir", defaultLogDir, "Set log directory: default is /tmp")
 	flag.StringVar(&(cfg.LogLevel), "loglevel", defaultLogLevel, "Set log level: default is info")
 }
