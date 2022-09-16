@@ -37,7 +37,7 @@ Usage of ./thinredis:
   -loglevel string
         Set log level: default is info (default "info")
   -port int
-        Bind a listening port: default is 6399 (default 6379)
+        Bind a listening port: default is 6379 (default 6379)
 ```
 ## Communication with thinRedis server
 Any redis client can communicate with thinRedis server.  
