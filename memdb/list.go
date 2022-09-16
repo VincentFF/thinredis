@@ -670,7 +670,7 @@ func lRangeList(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -678,7 +678,7 @@ func lRangeList(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	list, ok := tem.(*List)
 	if !ok {
@@ -687,7 +687,7 @@ func lRangeList(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	temRes := list.Range(start, end)
 	if temRes == nil {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	res := make([]resp.RedisData, len(temRes))
 	for i := 0; i < len(temRes); i++ {
