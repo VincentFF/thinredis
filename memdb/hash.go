@@ -131,7 +131,7 @@ func hGetAllHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -139,7 +139,7 @@ func hGetAllHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	hash, ok := tem.(*Hash)
 	if !ok {
@@ -249,7 +249,7 @@ func hKeysHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -257,7 +257,7 @@ func hKeysHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	hash, ok := tem.(*Hash)
 	if !ok {
@@ -313,7 +313,7 @@ func hMGetHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -321,7 +321,7 @@ func hMGetHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	hash, ok := tem.(*Hash)
 	if !ok {
@@ -427,7 +427,7 @@ func hValsHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -435,7 +435,7 @@ func hValsHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	hash, ok := tem.(*Hash)
 	if !ok {
@@ -514,7 +514,7 @@ func hRandFieldHash(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
@@ -522,7 +522,7 @@ func hRandFieldHash(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	hash, ok := tem.(*Hash)
 	if !ok {

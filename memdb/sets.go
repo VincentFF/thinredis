@@ -98,7 +98,7 @@ func sDiffSet(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	tem, ok := m.db.Get(keys[0])
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	primSet, ok := tem.(*Set)
 	if !ok {
@@ -389,14 +389,14 @@ func sMembersSet(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	key := string(cmd[1])
 	if !m.CheckTTL(key) {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLock(key)
 	defer m.locks.RUnLock(key)
 	tem, ok := m.db.Get(key)
 	if !ok {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 	set, ok := tem.(*Set)
 	if !ok {
@@ -510,7 +510,7 @@ func sPopSet(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	if count == 0 {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	defer func() {
@@ -652,7 +652,7 @@ func sUnionSet(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	if len(keys) == 0 {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	m.locks.RLockMulti(keys)
@@ -672,7 +672,7 @@ func sUnionSet(m *MemDb, cmd [][]byte) resp.RedisData {
 	}
 
 	if len(sets) == 0 {
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	resSet := sets[0].Union(sets[1:]...)
@@ -734,7 +734,7 @@ func sUnionStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	if len(sets) == 0 {
 		m.locks.RUnLockMulti(keys)
-		return resp.MakeArrayData(nil)
+		return resp.MakeEmptyArrayData()
 	}
 
 	resSet := sets[0].Union(sets[1:]...)
