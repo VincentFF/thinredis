@@ -86,7 +86,7 @@ list
 Benchmark result is based on [redis-benchmark](https://redis.io/topics/benchmarks) tool.  
 Testing on ThinkBook Laptop with AMD Ryzen 7 5800H@3.20GHz, 16.0 GB RAM, and on windows 11 wsl2 ubuntu 22.04 system.
 
-`benchmark -c 50 -n 200000`
+`benchmark -c 50 -n 200000 -t get`
 
 ```text
 get: 168634.06 requests per second
