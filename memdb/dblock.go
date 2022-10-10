@@ -23,11 +23,7 @@ func NewLocks(size int) *Locks {
 }
 
 func (l *Locks) GetKeyPos(key string) int {
-	pos, err := util.HashKey(key)
-	if err != nil {
-		logger.Error("Locks GetKeyPos error: %v", err)
-		return -1
-	}
+	pos := util.HashKey(key)
 	return pos % len(l.locks)
 }
 

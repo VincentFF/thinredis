@@ -49,11 +49,8 @@ func NewConcurrentMap(size int) *ConcurrentMap {
 //}
 
 func (m *ConcurrentMap) getKeyPos(key string) int {
-	hash, err := util.HashKey(key)
-	if err != nil {
-		return -1
-	}
-	return hash % m.size
+
+	return util.HashKey(key) % m.size
 }
 
 func (m *ConcurrentMap) Set(key string, value any) int {

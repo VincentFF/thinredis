@@ -61,13 +61,9 @@ func keysKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	res := make([]resp.RedisData, 0)
 	allKeys := m.db.Keys()
 	pattern := string(cmd[1])
-	convertedPattern, err := util.CompilePattern(pattern)
-	if err != nil {
-		return resp.MakeArrayData(res)
-	}
 	for _, key := range allKeys {
 		if m.CheckTTL(key) {
-			if ok := convertedPattern.IsMatch(key); ok {
+			if util.PattenMatch(pattern, key) {
 				res = append(res, resp.MakeBulkData([]byte(key)))
 			}
 		}
