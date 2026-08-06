@@ -207,6 +207,9 @@ func sDiffStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 		}
 	}
+	// Redis overwrites the destination, deleting it when the result is empty.
+	m.db.Delete(desKey)
+	m.ttlKeys.Delete(desKey)
 	if diffRes.Len() != 0 {
 		m.db.Set(desKey, diffRes)
 	}
@@ -338,6 +341,9 @@ func sInterStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 		}
 	}
+	// Redis overwrites the destination, deleting it when the result is empty.
+	m.db.Delete(desKey)
+	m.ttlKeys.Delete(desKey)
 	if interSet.Len() != 0 {
 		m.db.Set(desKey, interSet)
 	}
@@ -693,23 +699,14 @@ func sUnionStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeErrorData("wrong number of arguments for 'sunionstore' command")
 	}
 
-	// first check if the destination type is a set. if not, return error immediately.
 	desKey := string(cmd[1])
-	m.CheckTTL(desKey)
-	tem, ok := m.db.Get(desKey)
-	if ok {
-		_, ok = tem.(*Set)
-		if !ok {
-			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
-		}
-	}
 
 	// second, get the union set
 	keys := make([]string, 0)
 	for i := 2; i < len(cmd); i++ {
 		key := string(cmd[i])
 		if m.CheckTTL(key) {
-			keys = append(keys, string(cmd[i]))
+			keys = append(keys, key)
 		}
 	}
 
@@ -717,7 +714,18 @@ func sUnionStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 		return resp.MakeIntData(0)
 	}
 
-	m.locks.RLockMulti(keys)
+	// Lock destination together with sources to avoid races and deadlocks.
+	allKeys := append(keys, desKey)
+	m.locks.LockMulti(allKeys)
+	defer m.locks.UnLockMulti(allKeys)
+
+	// check destination type
+	if tem, ok := m.db.Get(desKey); ok {
+		if _, ok := tem.(*Set); !ok {
+			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
+		}
+	}
+
 	sets := make([]*Set, 0)
 	for _, key := range keys {
 		tem, ok := m.db.Get(key)
@@ -726,31 +734,21 @@ func sUnionStoreSet(m *MemDb, cmd [][]byte) resp.RedisData {
 		}
 		set, ok := tem.(*Set)
 		if !ok {
-			m.locks.RUnLockMulti(keys)
 			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
 		}
 		sets = append(sets, set)
 	}
 
 	if len(sets) == 0 {
-		m.locks.RUnLockMulti(keys)
-		return resp.MakeEmptyArrayData()
+		m.db.Delete(desKey)
+		m.ttlKeys.Delete(desKey)
+		return resp.MakeIntData(0)
 	}
 
 	resSet := sets[0].Union(sets[1:]...)
-	m.locks.RUnLockMulti(keys)
-
-	// third, set the destination key
-	m.CheckTTL(desKey)
-	m.locks.Lock(desKey)
-	m.locks.UnLock(desKey)
-	tem, ok = m.db.Get(desKey)
-	if ok {
-		_, ok = tem.(*Set)
-		if !ok {
-			return resp.MakeErrorData("WRONGTYPE Operation against a key holding the wrong kind of value")
-		}
-	}
+	// Redis overwrites the destination, deleting it when the result is empty.
+	m.db.Delete(desKey)
+	m.ttlKeys.Delete(desKey)
 	if resSet.Len() != 0 {
 		m.db.Set(desKey, resSet)
 	}

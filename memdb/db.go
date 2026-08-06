@@ -60,6 +60,18 @@ func (m *MemDb) CheckTTL(key string) bool {
 
 	m.locks.Lock(key)
 	defer m.locks.UnLock(key)
+
+	// Re-check after acquiring the lock; another goroutine may have
+	// reset the key/TTL between the first check and now.
+	ttl, ok = m.ttlKeys.Get(key)
+	if !ok {
+		return true
+	}
+	ttlTime = ttl.(int64)
+	if ttlTime > time.Now().Unix() {
+		return true
+	}
+
 	m.db.Delete(key)
 	m.ttlKeys.Delete(key)
 	return false

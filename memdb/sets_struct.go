@@ -123,14 +123,13 @@ func (s *Set) Random(count int) []string {
 			}
 		}
 	} else {
-		for {
+		for len(res) < -count {
 			for key := range s.table {
 				res = append(res, key)
 				if len(res) == -count {
 					return res
 				}
 			}
-
 		}
 	}
 	return res

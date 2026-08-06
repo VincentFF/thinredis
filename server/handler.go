@@ -23,6 +23,12 @@ func NewHandler() *Handler {
 
 func (h *Handler) Handle(conn net.Conn) {
 	defer func() {
+		if r := recover(); r != nil {
+			logger.Error("handler panic recovered: ", r)
+		}
+	}()
+
+	defer func() {
 		err := conn.Close()
 		if err != nil {
 			logger.Error(err)

@@ -2,6 +2,7 @@ package memdb
 
 import (
 	"sync"
+	"sync/atomic"
 
 	"github.com/VincentFF/thinredis/util"
 )
@@ -13,8 +14,8 @@ const MaxConSize = int(1<<31 - 1)
 // it supports maximum table size = MaxConSize
 type ConcurrentMap struct {
 	table []*shard
-	size  int // table size
-	count int // total number of keys
+	size  int   // table size
+	count int64 // total number of keys
 }
 
 type shard struct {
@@ -61,7 +62,7 @@ func (m *ConcurrentMap) Set(key string, value any) int {
 	defer shard.rwMu.Unlock()
 
 	if _, ok := shard.mp[key]; !ok {
-		m.count++
+		atomic.AddInt64(&m.count, 1)
 		added = 1
 	}
 	shard.mp[key] = value
@@ -88,7 +89,7 @@ func (m *ConcurrentMap) SetIfNotExist(key string, value any) int {
 	defer shard.rwMu.Unlock()
 
 	if _, ok := shard.mp[key]; !ok {
-		m.count++
+		atomic.AddInt64(&m.count, 1)
 		shard.mp[key] = value
 		return 1
 	}
@@ -113,14 +114,14 @@ func (m *ConcurrentMap) Delete(key string) int {
 
 	if _, ok := shard.mp[key]; ok {
 		delete(shard.mp, key)
-		m.count--
+		atomic.AddInt64(&m.count, -1)
 		return 1
 	}
 	return 0
 }
 
 func (m *ConcurrentMap) Len() int {
-	return m.count
+	return int(atomic.LoadInt64(&m.count))
 }
 
 func (m *ConcurrentMap) Clear() {
@@ -128,13 +129,11 @@ func (m *ConcurrentMap) Clear() {
 }
 
 func (m *ConcurrentMap) Keys() []string {
-	keys := make([]string, m.count)
-	i := 0
+	keys := make([]string, 0, m.Len())
 	for _, shard := range m.table {
 		shard.rwMu.RLock()
 		for key := range shard.mp {
-			keys[i] = key
-			i++
+			keys = append(keys, key)
 		}
 		shard.rwMu.RUnlock()
 	}

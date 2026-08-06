@@ -90,7 +90,7 @@ func Debug(v ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()
 	setPrefix(DEBUG)
-	logger.Println(v)
+	logger.Println(v...)
 }
 
 func Info(v ...any) {
@@ -100,7 +100,7 @@ func Info(v ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()
 	setPrefix(INFO)
-	logger.Println(v)
+	logger.Println(v...)
 }
 
 func Warning(v ...any) {
@@ -110,7 +110,7 @@ func Warning(v ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()
 	setPrefix(WARNING)
-	logger.Println(v)
+	logger.Println(v...)
 }
 
 func Error(v ...any) {
@@ -120,7 +120,7 @@ func Error(v ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()
 	setPrefix(ERROR)
-	logger.Println(v)
+	logger.Println(v...)
 }
 
 func Panic(v ...any) {
@@ -130,5 +130,5 @@ func Panic(v ...any) {
 	logMu.Lock()
 	defer logMu.Unlock()
 	setPrefix(PANIC)
-	logger.Println(v)
+	logger.Println(v...)
 }

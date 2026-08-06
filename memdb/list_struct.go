@@ -198,7 +198,7 @@ func (l *List) RemoveElement(val []byte, count int) int {
 	}
 
 	if count == 0 {
-		count = l.Len - 1
+		count = l.Len
 	}
 
 	removed := 0

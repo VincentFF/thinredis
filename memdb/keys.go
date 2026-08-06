@@ -14,20 +14,25 @@ import (
 // keys.go file implements the keys commands of redis
 
 func delKey(m *MemDb, cmd [][]byte) resp.RedisData {
+	if len(cmd) < 2 {
+		return resp.MakeErrorData("wrong number of arguments for 'del' command")
+	}
 	cmdName := string(cmd[0])
 	if strings.ToLower(cmdName) != "del" {
 		logger.Error("delKey Function: cmdName is not del")
 		return resp.MakeErrorData("Protocol error: cmdName is not del")
 	}
-	if !m.CheckTTL(string(cmd[1])) {
-		return resp.MakeIntData(int64(0))
-	}
+
 	dKey := 0
 	for _, key := range cmd[1:] {
-		m.locks.Lock(string(key))
-		dKey += m.db.Delete(string(key))
-		m.ttlKeys.Delete(string(key))
-		m.locks.UnLock(string(key))
+		k := string(key)
+		if !m.CheckTTL(k) {
+			continue
+		}
+		m.locks.Lock(k)
+		dKey += m.db.Delete(k)
+		m.ttlKeys.Delete(k)
+		m.locks.UnLock(k)
 	}
 	return resp.MakeIntData(int64(dKey))
 }
@@ -80,7 +85,7 @@ func expireKey(m *MemDb, cmd [][]byte) resp.RedisData {
 
 	v, err := strconv.ParseInt(string(cmd[2]), 10, 64)
 	if err != nil {
-		logger.Error("expireKey Function: cmd[2] %s is not int", string(cmd[2]))
+		logger.Error("expireKey Function: cmd[2] " + string(cmd[2]) + " is not int")
 		return resp.MakeErrorData(fmt.Sprintf("error: %s is not int", string(cmd[2])))
 	}
 	ttl := time.Now().Unix() + v
@@ -115,7 +120,7 @@ func expireKey(m *MemDb, cmd [][]byte) resp.RedisData {
 		}
 	default:
 		if opt != "" {
-			logger.Error("expireKey Function: opt %s is not nx, xx, gt or lt", opt)
+			logger.Error("expireKey Function: opt " + opt + " is not nx, xx, gt or lt")
 			return resp.MakeErrorData(fmt.Sprintf("error: unsupport %s, except nx, xx, gt, lt", opt))
 		}
 		res = m.SetTTL(key, ttl)
@@ -217,11 +222,21 @@ func renameKey(m *MemDb, cmd [][]byte) resp.RedisData {
 	if !ok {
 		return resp.MakeErrorData(fmt.Sprintf("error: %s not exist", oldName))
 	}
+
+	// Preserve the TTL of the source key
+	var ttl int64
+	if t, ok := m.ttlKeys.Get(oldName); ok {
+		ttl = t.(int64)
+	}
+
 	m.db.Delete(oldName)
 	m.ttlKeys.Delete(oldName)
 	m.db.Delete(newName)
 	m.ttlKeys.Delete(newName)
 	m.db.Set(newName, oldValue)
+	if ttl != 0 {
+		m.ttlKeys.Set(newName, ttl)
+	}
 	return resp.MakeStringData("OK")
 }
 

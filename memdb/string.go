@@ -1,6 +1,7 @@
 package memdb
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -61,8 +62,10 @@ func setString(m *MemDb, cmd [][]byte) resp.RedisData {
 	m.locks.Lock(string(cmd[1]))
 	defer m.locks.UnLock(string(cmd[1]))
 
+	key := string(cmd[1])
+
 	var res resp.RedisData
-	oldVal, oldOk := m.db.Get(string(cmd[1]))
+	oldVal, oldOk := m.db.Get(key)
 	// check if the value is string
 	var oldTypeVal []byte
 	var typeOk bool
@@ -73,45 +76,39 @@ func setString(m *MemDb, cmd [][]byte) resp.RedisData {
 		}
 	}
 
-	// set key and check if it satisfies nx or xx condition
-	// return the set result if the get command is not given
+	// conditional logic: nx/xx
 	if nx || xx {
 		if nx {
-			if !oldOk {
-				m.db.Set(string(cmd[1]), cmd[2])
-			} else {
-				res = resp.MakeBulkData(nil)
-			}
-		} else {
 			if oldOk {
-				m.db.Set(string(cmd[1]), cmd[2])
-				res = resp.MakeStringData("OK")
-			} else {
-				res = resp.MakeBulkData(nil)
+				return resp.MakeBulkData(nil)
+			}
+		} else { // xx
+			if !oldOk {
+				return resp.MakeBulkData(nil)
 			}
 		}
-	} else {
-		m.db.Set(string(cmd[1]), cmd[2])
-		res = resp.MakeStringData("OK")
 	}
 
-	// If a get command offered, return GET result
+	// perform the set
+	m.db.Set(key, cmd[2])
+
+	// determine response
 	if get {
 		if !oldOk {
 			res = resp.MakeBulkData(nil)
 		} else {
 			res = resp.MakeBulkData(oldTypeVal)
 		}
+	} else {
+		res = resp.MakeStringData("OK")
 	}
 
-	// set ttl after key is existed
-
+	// ttl handling
 	if !keepttl {
-		m.DelTTL(string(cmd[1]))
+		m.DelTTL(key)
 	}
-
 	if ex {
-		m.SetTTL(string(cmd[1]), exval+time.Now().Unix())
+		m.SetTTL(key, exval+time.Now().Unix())
 	}
 
 	return res
@@ -186,16 +183,17 @@ func getRangeString(m *MemDb, cmd [][]byte) resp.RedisData {
 	if end < 0 {
 		end = len(byteVal) + end
 	}
-	end = end + 1
+	if start < 0 {
+		start = 0
+	}
+	if end >= len(byteVal) {
+		end = len(byteVal) - 1
+	}
 
 	if start > end || start >= len(byteVal) || end < 0 {
 		return resp.MakeBulkData([]byte{})
 	}
-
-	if start < 0 {
-		start = 0
-	}
-	return resp.MakeBulkData(byteVal[start:end])
+	return resp.MakeBulkData(byteVal[start : end+1])
 }
 
 func setRangeString(m *MemDb, cmd [][]byte) resp.RedisData {
@@ -231,14 +229,15 @@ func setRangeString(m *MemDb, cmd [][]byte) resp.RedisData {
 		}
 	}
 	if offset > len(oldVal) {
-		newVal = oldVal
-		for i := 0; i < offset-len(oldVal); i++ {
-			newVal = append(newVal, byte(0))
-		}
+		newVal = append(oldVal, bytes.Repeat([]byte{0}, offset-len(oldVal))...)
 		newVal = append(newVal, cmd[3]...)
 	} else {
-		newVal = oldVal[:offset]
+		newVal = make([]byte, 0, len(oldVal))
+		newVal = append(newVal, oldVal[:offset]...)
 		newVal = append(newVal, cmd[3]...)
+		if offset+len(cmd[3]) < len(oldVal) {
+			newVal = append(newVal, oldVal[offset+len(cmd[3]):]...)
+		}
 	}
 	m.db.Set(key, newVal)
 	return resp.MakeIntData(int64(len(newVal)))

@@ -47,7 +47,7 @@ func TestSetString(t *testing.T) {
 		t.Error("set reply error")
 	}
 	_, ok = mem.ttlKeys.Get("a")
-	if ok {
+	if !ok {
 		t.Error("set keepttl error")
 	}
 }

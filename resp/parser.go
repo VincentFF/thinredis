@@ -18,6 +18,11 @@ type ParsedRes struct {
 	Err  error
 }
 
+const (
+	maxBulkLen  = 512 * 1024 * 1024 // 512 MiB
+	maxArrayLen = 1024 * 1024       // 1 M elements
+)
+
 type readState struct {
 	bulkLen   int64
 	arrayLen  int
@@ -237,7 +242,7 @@ func parseMultiLine(msg []byte) (RedisData, error) {
 
 func parseArrayHeader(msg []byte, state *readState) error {
 	arrayLen, err := strconv.Atoi(string(msg[1 : len(msg)-2]))
-	if err != nil || arrayLen < -1 {
+	if err != nil || arrayLen < -1 || arrayLen > maxArrayLen {
 		return errors.New("Protocol error: " + string(msg))
 	}
 	state.arrayLen = arrayLen
@@ -248,7 +253,7 @@ func parseArrayHeader(msg []byte, state *readState) error {
 
 func parseBulkHeader(msg []byte, state *readState) error {
 	bulkLen, err := strconv.ParseInt(string(msg[1:len(msg)-2]), 10, 64)
-	if err != nil || bulkLen < -1 {
+	if err != nil || bulkLen < -1 || bulkLen > maxBulkLen {
 		return errors.New("Protocol error: " + string(msg))
 	}
 	state.bulkLen = bulkLen

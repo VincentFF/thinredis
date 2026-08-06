@@ -78,14 +78,13 @@ func (h *Hash) Random(count int) []string {
 			}
 		}
 	} else {
-		for {
+		for len(res) < -count {
 			for key := range h.table {
 				res = append(res, key)
 				if len(res) == -count {
 					return res
 				}
 			}
-
 		}
 	}
 	return res
@@ -108,14 +107,13 @@ func (h *Hash) RandomWithValue(count int) [][]byte {
 		}
 	} else {
 		count *= 2
-		for {
+		for len(res) < -count {
 			for key, val := range h.table {
 				res = append(res, []byte(key), val)
 				if len(res) == -count {
 					return res
 				}
 			}
-
 		}
 	}
 	return res
